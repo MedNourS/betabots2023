@@ -1,5 +1,3 @@
-import argparse
-import os
 from os.path import basename
 import logging
 import time

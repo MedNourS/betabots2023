@@ -1,4 +1,3 @@
-from os.path import basename
 import logging
 import time
 import ntcore

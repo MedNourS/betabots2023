@@ -17,27 +17,16 @@ import logging
 import ntcore
 
 # Function to detect apriltag and estimate pose
-def pose_estimation_and_communication(frame, estimator):
+def pose_estimation(frame, estimator):
     
-    #* Network Tables: 
-    # Print status updates in CLI
-    logging.basicConfig(level=logging.DEBUG)
-
-    # Initialize NT4 client
-    inst = ntcore.NetworkTableInstance.getDefault()
-    inst.startClient4("raspyPi")
-    inst.setServer("192.168.0.21") #! Change IP with server's IP
-
-    # Fetch Table, Topic and Publisher
-    table = inst.getTable("values")
-    publish = table.getFloatArrayTopic("idexidy").publish()
-
-    # Convert the frame to grayscale
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    global tag_id, x, y, yaw
 
     # Create an AprilTag detector
     detector = rpat.AprilTagDetector()
     detector.addFamily("tag36h11")
+
+    # Convert the frame to grayscale
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # Detect AprilTags in the grayscale frame
     detections = detector.detect(gray_frame)
@@ -57,14 +46,23 @@ def pose_estimation_and_communication(frame, estimator):
         rotation = pose.rotation()
         roll, pitch, yaw = rotation.x, rotation.y, rotation.z
 
-        # Publish values to /values/idexidy
-        publish.set([id, x, y, yaw])
-
 # Main function
 def main():
 
+    # Print status updates in CLI
+    logging.basicConfig(level=logging.DEBUG)
+
+    # Initialize NT4 client
+    inst = ntcore.NetworkTableInstance.getDefault()
+    inst.startClient4("raspyPi")
+    inst.setServer("192.168.0.21") #! Change IP with server's IP
+
+    # Fetch Table, Topic and Publisher
+    table = inst.getTable("9076")
+    publish = table.getFloatArrayTopic("april").publish()
+
     # Open the camera (0 is usually the default camera)
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
 
     # Create an AprilTag pose estimator configuration
     tag_size = 0.1778  # Replace with the actual size of your AprilTag in meters
@@ -79,7 +77,10 @@ def main():
         ret, frame = cap.read()
 
         # Detect and estimate poses for AprilTags in the captured frame
-        pose_estimation_and_communication(frame, estimator)
+        try:
+            publish.set([tag_id, x, y, yaw])
+        except:
+            publish.set([-1,-1,-1,-1])
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):

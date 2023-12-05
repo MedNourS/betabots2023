@@ -11,7 +11,6 @@
 
 # Modules
 import cv2
-import numpy as np
 import robotpy_apriltag as rpat
 import logging
 import ntcore

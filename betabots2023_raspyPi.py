@@ -15,7 +15,7 @@ import robotpy_apriltag as rpat
 import logging
 import ntcore
 
-# Function to detect apriltag and estimate pose
+# Function to detect AprilTags and estimate pose
 def pose_estimation(frame, estimator, size):
 
     # Create an AprilTag detector
@@ -30,39 +30,42 @@ def pose_estimation(frame, estimator, size):
 
     # Process each detection
     for detection in detections:
+        
         # Get tag information
         tag_id = detection.getId()
         x, y = detection.getCenter().x, detection.getCenter().y
 
         # Use the pose estimator to estimate the tag's pose
-        
         pose = rpat.AprilTagPoseEstimator(estimator).estimate(detection)
         translation = pose.translation()
         rotation = pose.rotation()
         pitch, yaw, roll = rotation.x_degrees, rotation.y_degrees, rotation.z_degrees
-        
-        #TODO distance code below (hopefully)
         
         # Get all AprilTag corners
         pt1 = detection.getCorner(0)
         pt2 = detection.getCorner(1)
         pt3 = detection.getCorner(2)
         pt4 = detection.getCorner(3)
+        
+        #* AprilTag Corners Demonstration
+        #*     pt1 -> O -- -- -- -- O <- pt2
+        #*            |             |
+        #*            |             |
+        #*            |             |
+        #*            |             |
+        #*     pt4 -> O -- -- -- -- O <- pt3
 
-        # Length 1
+        # Pixel Length of Side 1 (pt1 to pt4)
         yLength1 = abs(pt1.y - pt4.y)
         xLength1 = abs(pt1.x - pt4.x)
         pixelSideLength1 = ((xLength1)**2+(yLength1)**2)**0.5
 
-        # Length 2
+        # Pixel Length of Side 2 (pt2 to pt3)
         yLength2 = abs(pt2.y - pt3.y)
         xLength2 = abs(pt2.x - pt3.x)
         pixelSideLength2 = ((xLength2)**2 + (yLength2)**2)**0.5
 
-        # Calculate average pixel side length (of length 1 and 2)
-        #// avgSidePixelLength = (pixelSideLength1 + pixelSideLength2)/2
-
-        #tagDistance = (size / avgSidePixelLength)*1000 - 0.55
+        # Calculate Distance from Camera to AprilTag
         tagDistance = (size * 650) / ((pixelSideLength1 * pixelSideLength2) ** 0.5)
 
         # Returns the AprilTag information
@@ -72,10 +75,10 @@ def pose_estimation(frame, estimator, size):
 # Main function
 def main():
 
-    # Print status updates in CLI
+    # Print (NetworkTables) status updates in CLI
     logging.basicConfig(level=logging.DEBUG)
 
-    # Initialize NT4 client
+    # Start a NetworkTables instance, initialize NetworkTables4 client and set Server
     inst = ntcore.NetworkTableInstance.getDefault()
     inst.startClient4("raspyPi")
     inst.setServer("192.168.0.113") #! Change IP with server's IP
@@ -93,15 +96,17 @@ def main():
     estimator_config = rpat.AprilTagPoseEstimator.Config(tag_size, fx, fy, cx, cy)
 
     while True:
-        # Capture a frame from the camera
+        
+        # Capture a frame from the camera and return it
         ret, frame = cap.read()
-
+        # If no frames are returned, stop the program
         if not ret:
             break
 
+        # Variable for [tag_id, x, y, pitch, yaw, roll, tagDistance]
         poseList = pose_estimation(frame, estimator_config, tag_size)
 
-        # Detect and estimate poses for AprilTags in the captured frame
+        # Publish AprilTag information; if no AprilTag is detected, publish [-1, -1, -1, -1, -1, -1, -1]
         try:
             publish.set(poseList)
         except:

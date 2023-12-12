@@ -27,9 +27,16 @@ def pose_estimation(frame, estimator, size):
 
     # Detect AprilTags in the grayscale frame
     detections = detector.detect(gray_frame)
+    
+    # Total AprilTags detected
+    detectedTags = 0
 
     # Process each detection
     for detection in detections:
+        
+        # For every detection, add a detected AprilTag
+        detectedTags += 1
+
         # Get tag information
         tag_id = detection.getId()
         x, y = detection.getCenter().x, detection.getCenter().y
@@ -64,10 +71,12 @@ def pose_estimation(frame, estimator, size):
 
         #tagDistance = (size / avgSidePixelLength)*1000 - 0.55
         tagDistance = (size * 650) / ((pixelSideLength1 * pixelSideLength2) ** 0.5)
-
-        # Returns the AprilTag information
-        return [tag_id, int(x), int(y), round(pitch, 2), round(yaw, 2), round(roll, 2), round(tagDistance, 2)]
-
+             
+    # Returns the AprilTag information
+    try:
+        return [tag_id, int(x), int(y), round(pitch, 2), round(yaw, 2), round(roll, 2), round(tagDistance, 2), detectedTags]
+    except:
+        return None
 
 # Main function
 def main():
@@ -78,7 +87,7 @@ def main():
     # Initialize NT4 client
     inst = ntcore.NetworkTableInstance.getDefault()
     inst.startClient4("raspyPi")
-    inst.setServer("192.168.0.113") #! Change IP with server's IP
+    inst.setServer("10.90.76.2") #! Change IP with server's IP
 
     # Fetch Table, Topic and Publisher
     table = inst.getTable("9076")
@@ -86,7 +95,7 @@ def main():
 
     # Open the camera (0 is usually the default camera)
     cap = cv2.VideoCapture(0)
-    
+        
     # Create an AprilTag pose estimator configuration
     tag_size = 0.1778  # Replace with the actual size of your AprilTag in meters
     fx, fy, cx, cy = 1000.0, 1000.0, 640.0, 480.0  #! Replace with your camera's intrinsic parameters
@@ -98,8 +107,13 @@ def main():
 
         if not ret:
             break
+        frame = cv2.resize(frame, (1920, 1080))
 
+        # Fetch AprilTag information from pose_estimation()
         poseList = pose_estimation(frame, estimator_config, tag_size)
+        
+        #? For testing purposes
+        print(poseList)
 
         # Detect and estimate poses for AprilTags in the captured frame
         try:

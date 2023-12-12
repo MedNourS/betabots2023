@@ -14,6 +14,7 @@ import cv2
 import robotpy_apriltag as rpat
 import logging
 import ntcore
+import math
 
 # Function to detect AprilTags and estimate pose
 def pose_estimation(frame, estimator, size):

@@ -87,7 +87,7 @@ def main():
     # Initialize NT4 client
     inst = ntcore.NetworkTableInstance.getDefault()
     inst.startClient4("raspyPi")
-    inst.setServer("10.90.76.2") #! Change IP with server's IP
+    inst.setServer("192.168.0.111") #! Change IP with server's IP
 
     # Fetch Table, Topic and Publisher
     table = inst.getTable("9076")
@@ -119,7 +119,7 @@ def main():
         try:
             publish.set(poseList)
         except:
-            publish.set([-1, -1, -1, -1, -1, -1, -1])
+            publish.set([-1, -1, -1, -1, -1, -1, -1, -1])
 
 if __name__ == "__main__":
     main()

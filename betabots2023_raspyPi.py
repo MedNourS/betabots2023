@@ -48,13 +48,20 @@ def pose_estimation(frame, estimator, size):
         rotation = pose.rotation()
         pitch, yaw, roll = rotation.x_degrees, rotation.y_degrees, rotation.z_degrees
         
-        #TODO distance code below (hopefully)
-        
         # Get all AprilTag corners
         pt1 = detection.getCorner(0)
         pt2 = detection.getCorner(1)
         pt3 = detection.getCorner(2)
         pt4 = detection.getCorner(3)
+
+        #*    AprilTag Corners Demonstration
+        #*
+        #*     pt1 -> O ---------- O <- pt2
+        #*            |            |
+        #*            |            |
+        #*            |            |
+        #*            |            |
+        #*     pt4 -> O ---------- O <- pt3
 
         # Length 1
         yLength1 = abs(pt1.y - pt4.y)
@@ -107,13 +114,13 @@ def main():
 
         if not ret:
             break
-        frame = cv2.resize(frame, (1920, 1080))
+        frame = cv2.resize(frame, (1280, 720))
 
         # Fetch AprilTag information from pose_estimation()
         poseList = pose_estimation(frame, estimator_config, tag_size)
         
         #? For testing purposes
-        print(poseList)
+        #// print(poseList)
 
         # Detect and estimate poses for AprilTags in the captured frame
         try:
